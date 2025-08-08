@@ -47,28 +47,33 @@ vertexai.init(
     location=os.getenv("GOOGLE_CLOUD_LOCATION"),
 )
 
-session_service = VertexAiSessionService(project=os.getenv("GOOGLE_CLOUD_PROJECT"),location=os.getenv("GOOGLE_CLOUD_LOCATION"))
+#session_service = VertexAiSessionService(project=os.getenv("GOOGLE_CLOUD_PROJECT"),location=os.getenv("GOOGLE_CLOUD_LOCATION"))
 AGENT_ENGINE_ID = os.getenv("AGENT_ENGINE_ID")
 
-session = asyncio.run(session_service.create_session(
-    app_name=AGENT_ENGINE_ID,
-    user_id="123",
-))
+#session = asyncio.run(session_service.create_session(
+#    app_name=AGENT_ENGINE_ID,
+#    user_id="123",
+#))
 
 agent_engine = agent_engines.get(AGENT_ENGINE_ID)
 
 queries = [
-    "Hi, how are you?",
-    "According to the MD&A, how might the increasing proportion of revenues derived from non-advertising sources like Google Cloud and devices potentially impact Alphabet's overall operating margin, and why?",
-    "The report mentions significant investments in AI. What specific connection is drawn between these AI investments and the company's expectations regarding future capital expenditures?",
-    "Thanks, I got all the information I need. Goodbye!",
+    'Hello what can you do for me?',
+    'Hello can you convert Splunk SPL to Cortex XSIAM XQL?',
 ]
 
-for query in queries:
-    print(f"\n[user]: {query}")
-    for event in agent_engine.stream_query(
-        user_id="123",
-        session_id=session.id,
-        message=query,
-    ):
-        pretty_print_event(event)
+for response in agent_engine.stream_query(
+    message="What is the exchange rate from US dollars to Swedish Krona today?",
+    user_id="123",
+    session_id="5726762882561998848"
+):
+    print(response)
+
+#for query in queries:
+#    print(f"\n[user]: {query}")
+#    for event in agent_engine.stream_query(
+#        user_id="123",
+#        session_id=session.id,
+#        message=query,
+#    ):
+#        print(event)

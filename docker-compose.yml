@@ -1,0 +1,9 @@
+services:
+  web-ui:
+    image: flask-gunicorn:latest
+    container_name: web-ui
+    volumes:
+      - ./web_app:/app
+    ports:
+      - 8000:8000
+

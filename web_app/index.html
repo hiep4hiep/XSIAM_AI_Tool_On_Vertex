@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertex AI Agent Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .chat-header .subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .status-indicator {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+            animation: fadeInUp 0.3s ease;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.agent {
+            background: #f8fafc;
+            color: #334155;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e2e8f0;
+            white-space: pre-wrap;
+        }
+
+        .message.system {
+            background: #fef3c7;
+            color: #92400e;
+            align-self: center;
+            font-size: 12px;
+            max-width: 90%;
+            text-align: center;
+            border: 1px solid #fbbf24;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #dc2626;
+            align-self: center;
+            max-width: 90%;
+            border: 1px solid #f87171;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px 18px;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            max-width: 70%;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: #64748b;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        .typing-text {
+            margin-left: 10px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 14px;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 90px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .connection-status {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 12px;
+            opacity: 0.8;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(-6px);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
+            }
+            100% {
+                box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+
+            .chat-input-form {
+                gap: 8px;
+            }
+
+            .send-button {
+                min-width: 60px;
+                padding: 14px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="connection-status" id="connectionStatus">🔒 Secure Connection</div>
+            <h1>Vertex AI Agent</h1>
+            <div class="subtitle">Ready to assist you</div>
+            <div class="status-indicator"></div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message system">
+                👋 Welcome! I'm your Vertex AI Agent. How can I help you today?
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="typing-text">Agent is thinking...</div>
+        </div>
+        
+        <div class="chat-input-container">
+            <form class="chat-input-form" onsubmit="sendMessage(event)">
+                <textarea class="chat-input" id="messageInput" 
+                         placeholder="Type your message here..." 
+                         onkeydown="handleKeyDown(event)"
+                         rows="1"></textarea>
+                <button type="submit" class="send-button" id="sendButton">
+                    <span id="sendButtonText">Send</span>
+                    <span id="sendButtonIcon">✨</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let messageCount = 0;
+
+        function addMessage(content, type = 'user', timestamp = true) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            if (type === 'agent' && content) {
+                // Format agent responses nicely
+                messageDiv.textContent = content;
+            } else {
+                messageDiv.textContent = content;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            
+            // Smooth scroll to bottom
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+            
+            messageCount++;
+            
+            // Update connection status
+            if (type === 'agent' && messageCount > 1) {
+                document.getElementById('connectionStatus').textContent = '✅ Connected';
+            }
+        }
+
+        function showTyping() {
+            document.getElementById('typingIndicator').style.display = 'flex';
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        function hideTyping() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        function setButtonState(disabled) {
+            const sendButton = document.getElementById('sendButton');
+            const sendButtonText = document.getElementById('sendButtonText');
+            const sendButtonIcon = document.getElementById('sendButtonIcon');
+            const messageInput = document.getElementById('messageInput');
+            
+            sendButton.disabled = disabled;
+            sendButtonText.textContent = disabled ? 'Sending' : 'Send';
+            sendButtonIcon.textContent = disabled ? '⏳' : '✨';
+            messageInput.disabled = disabled;
+        }
+
+        async function sendMessage(event) {
+            event.preventDefault();
+            
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage(message, 'user');
+            messageInput.value = '';
+            resetTextareaHeight();
+            
+            // Show typing indicator and disable input
+            showTyping();
+            setButtonState(true);
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Server error (${response.status})`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.response) {
+                    addMessage(data.response, 'agent');
+                } else {
+                    throw new Error('No response received from agent');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage(`❌ ${error.message}`, 'error');
+                document.getElementById('connectionStatus').textContent = '⚠️ Connection Issue';
+            } finally {
+                hideTyping();
+                setButtonState(false);
+                messageInput.focus();
+            }
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage(event);
+            }
+        }
+
+        function resetTextareaHeight() {
+            const textarea = document.getElementById('messageInput');
+            textarea.style.height = 'auto';
+            textarea.rows = 1;
+        }
+
+        // Auto-resize textarea
+        document.getElementById('messageInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            const newHeight = Math.min(this.scrollHeight, 120);
+            this.style.height = newHeight + 'px';
+            
+            // Update rows for better UX
+            const lineHeight = 20;
+            this.rows = Math.max(1, Math.floor(newHeight / lineHeight));
+        });
+
+        // Focus on input when page loads
+        window.addEventListener('load', () => {
+            document.getElementById('messageInput').focus();
+            
+            // Test connection on load
+            fetch('/api/health')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        document.getElementById('connectionStatus').textContent = '✅ Ready';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('connectionStatus').textContent = '⚠️ Check Connection';
+                });
+        });
+
+        // Handle connection status
+        window.addEventListener('online', () => {
+            document.getElementById('connectionStatus').textContent = '🔄 Reconnecting...';
+            setTimeout(() => {
+                document.getElementById('connectionStatus').textContent = '✅ Connected';
+            }, 1000);
+        });
+
+        window.addEventListener('offline', () => {
+            document.getElementById('connectionStatus').textContent = '📡 Offline';
+        });
+    </script>
+</body>
+</html>

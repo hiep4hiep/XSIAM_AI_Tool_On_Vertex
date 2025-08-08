@@ -15,7 +15,7 @@
 import vertexai
 from vertexai import agent_engines
 from vertexai.preview.reasoning_engines import AdkApp
-from rag.agent import root_agent
+from spl_to_xql.agent import root_agent
 import logging
 import os
 from dotenv import set_key
@@ -64,7 +64,7 @@ remote_app = agent_engines.create(
         "llama-index",
     ],
     extra_packages=[
-        "./rag",
+        "./spl_to_xql",
     ],
 )
 
