@@ -268,7 +268,7 @@
             }
             try {
                 const requestBody = { message: message };
-                if (sessionId) requestBody.sessionId = sessionId;
+                if (sessionId != null) requestBody.sessionId = sessionId;
 
                 const agentType = document.getElementById('agentSelector').value;
                 const endpoint = agentType === 'doc' ? '/api/chat/doc' : '/api/chat/spl';
