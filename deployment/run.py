@@ -47,13 +47,12 @@ vertexai.init(
     location=os.getenv("GOOGLE_CLOUD_LOCATION"),
 )
 
-#session_service = VertexAiSessionService(project=os.getenv("GOOGLE_CLOUD_PROJECT"),location=os.getenv("GOOGLE_CLOUD_LOCATION"))
+session_service = VertexAiSessionService(project=os.getenv("GOOGLE_CLOUD_PROJECT"),location=os.getenv("GOOGLE_CLOUD_LOCATION"))
 AGENT_ENGINE_ID = os.getenv("AGENT_ENGINE_ID")
-
-#session = asyncio.run(session_service.create_session(
-#    app_name=AGENT_ENGINE_ID,
-#    user_id="123",
-#))
+session = asyncio.run(session_service.create_session(
+    app_name=AGENT_ENGINE_ID,
+    user_id="123",
+))
 
 agent_engine = agent_engines.get(AGENT_ENGINE_ID)
 
@@ -62,18 +61,12 @@ queries = [
     'Hello can you convert Splunk SPL to Cortex XSIAM XQL?',
 ]
 
-for response in agent_engine.stream_query(
-    message="What is the exchange rate from US dollars to Swedish Krona today?",
-    user_id="123",
-    session_id="5726762882561998848"
-):
-    print(response)
 
-#for query in queries:
-#    print(f"\n[user]: {query}")
-#    for event in agent_engine.stream_query(
-#        user_id="123",
-#        session_id=session.id,
-#        message=query,
-#    ):
-#        print(event)
+for query in queries:
+    print(f"\n[user]: {query}")
+    for event in agent_engine.stream_query(
+        user_id="123",
+        session_id=session.id,
+        message=query,
+    ):
+        print(event)
