@@ -6,6 +6,7 @@ Vertex AI Chat Backend using Python Flask and Google Cloud SDK
 import os
 import logging
 from datetime import datetime
+import json
 import asyncio
 import vertexai
 from vertexai import agent_engines
@@ -13,7 +14,8 @@ from vertexai.preview import reasoning_engines
 from google.adk.sessions import VertexAiSessionService
 from dotenv import load_dotenv
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, Response, request, jsonify, send_from_directory, stream_with_context
+from datetime import datetime
 from flask_cors import CORS
 from google.cloud import aiplatform
 from google.oauth2 import service_account
@@ -71,26 +73,44 @@ def chat():
         logger.info(f"Received chat message: {message[:100]}...")
         
         # Query the Vertex AI reasoning engine
-        for response in agent_engine.stream_query(
-            message=message,
-            user_id="web_app",
-            session_id=session_id
-        ):
-            result = response
-        logger.info(f"Response received: {result}")
-        if result.get("content").get("parts")[0].get("text"):
-            logger.info(f"Returning response...")
-            return jsonify({
-                "response": result.get("content").get("parts")[0].get("text"),
-                "session_id": session_id,
-                "timestamp": result["timestamp"]
-            })
-        else:
-            logger.info(f"Returning error {result['error']}")
-            return jsonify({
-                "error": result["error"],
-                "timestamp": result["timestamp"]
-            }), 500
+        def generate():
+            try:
+                for response in agent_engine.stream_query(
+                    message=message,
+                    user_id="web_app",
+                    session_id=session_id
+                ):
+                    # Extract partial text if available
+                    text = (
+                        response.get("content", {})
+                                .get("parts", [{}])[0]
+                                .get("text", "")
+                    )
+                    if text:
+                        chunk = {
+                            "response": text,
+                            "session_id": session_id,
+                            "timestamp": response.get("timestamp", datetime.now().isoformat())
+                        }
+                        yield f"data: {json.dumps(chunk)}\n\n"
+
+                # Mark end of stream
+                yield "event: end\n"
+                yield "data: [DONE]\n\n"
+
+            except Exception as e:
+                logger.error(f"Error in SSE stream: {e}")
+                error_msg = {
+                    "error": f"Internal server error: {str(e)}",
+                    "timestamp": datetime.now().isoformat()
+                }
+                yield f"data: {json.dumps(error_msg)}\n\n"
+
+        return Response(
+            stream_with_context(generate()),
+            content_type="text/event-stream",
+        )
+
             
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
