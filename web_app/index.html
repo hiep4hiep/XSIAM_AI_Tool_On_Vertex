@@ -216,7 +216,13 @@
 
     <script>
         let messageCount = 0;
-        let sessionId = null;
+        const storedSessionId = sessionStorage.getItem('chatSessionId');
+        if (storedSessionId) {
+            sessionId = storedSessionId;
+            console.log('🔄 Existing session:', sessionId);
+        } else {
+            sessionId = null;
+        }
 
         function addMessage(content, type='user') {
             const chatMessages = document.getElementById('chatMessages');
@@ -281,6 +287,7 @@
 
                 const data = await response.json();
                 if (data.sessionId && !sessionId) sessionId = data.sessionId;
+                sessionStorage.setItem('chatSessionId', sessionId);
                 if (data.response) {
                     addMessage(data.response, 'agent');
                 } else {
