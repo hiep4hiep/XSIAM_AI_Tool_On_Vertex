@@ -261,10 +261,10 @@
             setButtonState(true);
             const storedSessionId = sessionStorage.getItem('chatSessionId');
             if (storedSessionId) {
-                let sessionId = storedSessionId;
+                sessionId = storedSessionId;
                 console.log('🔄 Existing session:', sessionId);
             } else {
-                let sessionId = null;
+                sessionId = null;
             }
             try {
                 const requestBody = { message: message };
