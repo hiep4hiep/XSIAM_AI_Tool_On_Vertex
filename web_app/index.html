@@ -216,13 +216,6 @@
 
     <script>
         let messageCount = 0;
-        const storedSessionId = sessionStorage.getItem('chatSessionId');
-        if (storedSessionId) {
-            let sessionId = storedSessionId;
-            console.log('🔄 Existing session:', sessionId);
-        } else {
-            let sessionId = null;
-        }
 
         function addMessage(content, type='user') {
             const chatMessages = document.getElementById('chatMessages');
@@ -266,7 +259,13 @@
             resetTextareaHeight();
             showTyping();
             setButtonState(true);
-
+            const storedSessionId = sessionStorage.getItem('chatSessionId');
+            if (storedSessionId) {
+                let sessionId = storedSessionId;
+                console.log('🔄 Existing session:', sessionId);
+            } else {
+                let sessionId = null;
+            }
             try {
                 const requestBody = { message: message };
                 if (sessionId) requestBody.sessionId = sessionId;
