@@ -325,26 +325,32 @@
     <script>
         let messageCount = 0;
         let sessionId = null; // Global variable to track session
-        function addMessage(text, sender, options = {}) {
-            const chatContainer = document.getElementById("chat-container");
-
-            // If we want to replace the last message instead of adding a new one
-            if (options.replaceLast) {
-                const lastMessage = chatContainer.querySelector(".message:last-child");
-                if (lastMessage && lastMessage.classList.contains(sender)) {
-                    // Update the text of the last message
-                    lastMessage.textContent = text;
-                    return;
-                }
+        function addMessage(content, type = 'user', timestamp = true) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            if (type === 'agent' && content) {
+                // Format agent responses nicely
+                messageDiv.textContent = content;
+            } else {
+                messageDiv.textContent = content;
             }
-
-            // Otherwise, create a new message bubble
-            const messageElem = document.createElement("div");
-            messageElem.classList.add("message", sender);
-            messageElem.textContent = text;
-
-            chatContainer.appendChild(messageElem);
-            chatContainer.scrollTop = chatContainer.scrollHeight; // Auto scroll to bottom
+            
+            chatMessages.appendChild(messageDiv);
+            
+            // Smooth scroll to bottom
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+            
+            messageCount++;
+            
+            // Update connection status
+            if (type === 'agent' && messageCount > 1) {
+                document.getElementById('connectionStatus').textContent = '✅ Connected';
+            }
         }
 
         function showTyping() {
@@ -413,57 +419,21 @@
                     throw new Error(errorData.error || `Server error (${response.status})`);
                 }
 
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = "";
+                const data = await response.json();
 
-                // We'll build up the AI's response progressively
-                let accumulatedResponse = "";
+                // Store sessionId from response if not already set
+                if (data.sessionId && !sessionId) {
+                    sessionId = data.sessionId;
 
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
+                    // Optional: persist session across page reloads
+                    // localStorage.setItem('chatSessionId', sessionId);
+                }
 
-                    buffer += decoder.decode(value, { stream: true });
-
-                    // SSE messages are separated by \n\n
-                    const parts = buffer.split("\n\n");
-                    buffer = parts.pop(); // keep incomplete chunk for next loop
-
-                    for (const part of parts) {
-                        if (part.startsWith("data:")) {
-                            const jsonStr = part.replace(/^data:\s*/, "");
-                            if (jsonStr === "[DONE]") {
-                                console.log("Stream complete");
-                                // Finalize accumulated response
-                                if (accumulatedResponse) {
-                                    addMessage(accumulatedResponse, "agent");
-                                }
-                                return;
-                            }
-
-                            try {
-                                const data = JSON.parse(jsonStr);
-
-                                // Capture session_id once and persist
-                                if (data.session_id && !sessionId) {
-                                    sessionId = data.session_id;
-                                    // Persist across page reloads if needed
-                                    // localStorage.setItem("chatSessionId", sessionId);
-                                }
-
-                                // Append response text
-                                if (data.response) {
-                                    accumulatedResponse += data.response;
-                                    // Option A: update live typing effect
-                                    addMessage(accumulatedResponse, "agent", { replaceLast: true });
-                                    // Option B: only show once at [DONE] → comment out line above
-                                }
-                            } catch (e) {
-                                console.error("Failed to parse SSE chunk:", e, jsonStr);
-                            }
-                        }
-                    }
+                // Add AI response to chat
+                if (data.response) {
+                    addMessage(data.response, 'agent');
+                } else {
+                    throw new Error('No response received from agent');
                 }
 
             } catch (error) {
