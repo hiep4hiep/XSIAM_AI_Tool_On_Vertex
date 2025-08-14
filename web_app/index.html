@@ -259,7 +259,7 @@
             resetTextareaHeight();
             showTyping();
             setButtonState(true);
-            const storedSessionId = sessionStorage.getItem('chatSessionId');
+            var storedSessionId = sessionStorage.getItem('chatSessionId');
             if (storedSessionId) {
                 sessionId = storedSessionId;
                 console.log('🔄 Existing session:', sessionId);
@@ -268,7 +268,7 @@
             }
             try {
                 const requestBody = { message: message };
-                if (sessionId != null && sessionId != "null") requestBody.sessionId = sessionId;
+                if (sessionId != null && sessionId != "null") requestBody.session_id = sessionId;
 
                 const agentType = document.getElementById('agentSelector').value;
                 const endpoint = agentType === 'doc' ? '/api/chat/doc' : '/api/chat/spl';
@@ -285,11 +285,10 @@
                 }
 
                 const data = await response.json();
-                if (data.sessionId && !sessionId) sessionId = data.sessionId;
+                if (data.session_id) sessionId = data.session_id;
                 sessionStorage.setItem('chatSessionId', sessionId);
                 storedSessionId = sessionStorage.getItem('chatSessionId');
 
-                console.log('🔄 Stored Session ID:', storedSessionId);
                 if (data.response) {
                     addMessage(data.response, 'agent');
                 } else {

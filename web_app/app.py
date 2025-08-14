@@ -38,7 +38,7 @@ vertexai.init(
     project=os.getenv("GOOGLE_CLOUD_PROJECT"),
     location=os.getenv("GOOGLE_CLOUD_LOCATION"),
 )
-session_service = VertexAiSessionService(project=os.getenv("GOOGLE_CLOUD_PROJECT"),location=os.getenv("GOOGLE_CLOUD_LOCATION"))
+#session_service = VertexAiSessionService(project=os.getenv("GOOGLE_CLOUD_PROJECT"),location=os.getenv("GOOGLE_CLOUD_LOCATION"))
 #AGENT_ENGINE_ID = os.getenv("AGENT_ENGINE_ID")
 #agent_engine = agent_engines.get(AGENT_ENGINE_ID)
 
