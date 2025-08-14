@@ -15,7 +15,7 @@
 import vertexai
 from vertexai import agent_engines
 from vertexai.preview.reasoning_engines import AdkApp
-from spl_to_xql.agent import root_agent
+from ingestion_doc_tool.agent import root_agent
 import logging
 import os
 from dotenv import set_key
