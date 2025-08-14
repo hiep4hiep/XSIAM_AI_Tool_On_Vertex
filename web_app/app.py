@@ -77,14 +77,16 @@ def chat():
             session_id=session_id
         ):
             result = response
-
+        logger.info(f"Response received: {result}")
         if result.get("content").get("parts")[0].get("text"):
+            logger.info(f"Returning response...")
             return jsonify({
                 "response": result.get("content").get("parts")[0].get("text"),
                 "session_id": session_id,
                 "timestamp": result["timestamp"]
             })
         else:
+            logger.info(f"Returning error {result['error']}")
             return jsonify({
                 "error": result["error"],
                 "timestamp": result["timestamp"]
