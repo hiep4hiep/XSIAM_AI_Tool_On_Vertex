@@ -218,10 +218,10 @@
         let messageCount = 0;
         const storedSessionId = sessionStorage.getItem('chatSessionId');
         if (storedSessionId) {
-            sessionId = storedSessionId;
+            let sessionId = storedSessionId;
             console.log('🔄 Existing session:', sessionId);
         } else {
-            sessionId = null;
+            let sessionId = null;
         }
 
         function addMessage(content, type='user') {
