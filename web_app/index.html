@@ -287,6 +287,9 @@
                 const data = await response.json();
                 if (data.sessionId && !sessionId) sessionId = data.sessionId;
                 sessionStorage.setItem('chatSessionId', sessionId);
+                storedSessionId = sessionStorage.getItem('chatSessionId');
+
+                console.log('🔄 Stored Session ID:', storedSessionId);
                 if (data.response) {
                     addMessage(data.response, 'agent');
                 } else {
