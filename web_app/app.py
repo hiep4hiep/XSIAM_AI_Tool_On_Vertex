@@ -44,46 +44,55 @@ session_service = VertexAiSessionService(project=os.getenv("GOOGLE_CLOUD_PROJECT
 
 def chat_to_engine(engine_id):
     agent_engine = agent_engines.get(engine_id)
+    if not agent_engine:
+        return jsonify({"error": "Invalid engine ID"}), 400
+
     try:
-        # Get request data
+        # Parse request JSON
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
-        
+
         message = data.get('message', '').strip()
         if not message:
             return jsonify({"error": "Message is required"}), 400
-        
+
         session_id = data.get('session_id')
         if not session_id:
-            session = agent_engine.create_session(
-                user_id="web_app"
-            )
+            session = agent_engine.create_session(user_id="web_app")
             session_id = session.get('id')
+
         logger.info(f"Received chat message: {message[:100]}...")
-        
-        # Query the Vertex AI reasoning engine
+
+        result = None
         for response in agent_engine.stream_query(
             message=message,
             user_id="web_app",
             session_id=session_id
         ):
-            result = response
-        logger.info(f"Response received: {result}")
-        if result.get("content").get("parts")[0].get("text"):
+            result = response  # assuming the last one is the final result
+
+        if not result:
+            return jsonify({"error": "No response from agent engine"}), 500
+
+        content_parts = result.get("content", {}).get("parts", [])
+        text = content_parts[0].get("text") if content_parts else None
+
+        if text:
             logger.info(f"Returning response...")
             return jsonify({
-                "response": result.get("content").get("parts")[0].get("text"),
+                "response": text,
                 "session_id": session_id,
-                "timestamp": result["timestamp"]
+                "timestamp": result.get("timestamp")
             })
         else:
-            logger.info(f"Returning error {result['error']}")
+            error_msg = result.get("error", "Unknown error")
+            logger.info(f"Returning error: {error_msg}")
             return jsonify({
-                "error": result["error"],
-                "timestamp": result["timestamp"]
+                "error": error_msg,
+                "timestamp": result.get("timestamp")
             }), 500
-            
+
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
         return jsonify({
@@ -97,14 +106,18 @@ def index():
     """Serve the main HTML page"""
     return send_from_directory('.', 'index.html')
 
-@app.route('/api/chat/doc', methods=['POST'])
-def chat_doc():
-    chat_to_engine(os.getenv("DOC_AGENT_ENGINE_ID"))
+@app.route('/api/chat/<engine_key>', methods=['POST'])
+def chat(engine_key):
+    # Map engine_key to environment variable or direct engine_id
+    engine_env_map = {
+        "doc": os.getenv("DOC_AGENT_ENGINE_ID"),
+        "spl": os.getenv("SPL_AGENT_ENGINE_ID")
+    }
+    engine_id = engine_env_map.get(engine_key)
+    if not engine_id:
+        return jsonify({"error": f"Unknown engine '{engine_key}'"}), 404
 
-
-@app.route('/api/chat/spl', methods=['POST'])
-def chat_spl():
-    chat_to_engine(os.getenv("SPL_AGENT_ENGINE_ID"))
+    return chat_to_engine(engine_id)
 
 # Error handlers
 @app.errorhandler(404)
