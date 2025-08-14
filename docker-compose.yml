@@ -5,5 +5,5 @@ services:
     volumes:
       - ./web_app:/app
     ports:
-      - 80:8000
+      - 8002:8000
 
