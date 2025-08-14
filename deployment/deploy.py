@@ -64,7 +64,7 @@ remote_app = agent_engines.create(
         "llama-index",
     ],
     extra_packages=[
-        "./spl_to_xql",
+        "./ingestion_doc_tool"  # Ensure this path is correct relative to the script,
     ],
 )
 

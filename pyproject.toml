@@ -1,7 +1,7 @@
 [project]
-name = "spl_to_xql"
+name = "ingestion_doc_tool"
 version = "0.1.0"
-description = "Convert Splunk SPL to XQL"
+description = "Generate Cortex XSIAM Ingestion Doc tool"
 authors = [
         { name = "Hiep Nguyen", email = "hnguyen@paloaltonetworks.com" }
 ]

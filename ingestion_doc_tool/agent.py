@@ -43,8 +43,8 @@ ask_vertex_retrieval = VertexAiRagRetrieval(
 
 root_agent = Agent(
     model='gemini-2.5-pro',
-    name='splunk_spl_to_xql',
-    description="A bot that convert SPL to XQL",
+    name='cortex_xsiam_data_ingestion_agent',
+    description="Agent specialized in generating Documents for Cortex XSIAM data ingestion.",
     instruction=return_instructions_root(),
     tools=[
         ask_vertex_retrieval,

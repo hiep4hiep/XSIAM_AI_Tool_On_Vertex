@@ -61,7 +61,7 @@ def create() -> None:
             "requests",
             "llama-index",
         ],
-        extra_packages=["./spl_to_xql"],
+        extra_packages=["./ingestion_doc_tool"],
     )
     print(f"Created remote app: {remote_app.resource_name}")
 

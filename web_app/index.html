@@ -13,7 +13,8 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e1e2f 0%, #12121c 100%);
+            color: #e0e0e0;
             height: 100vh;
             display: flex;
             justify-content: center;
@@ -24,17 +25,17 @@
             width: 100%;
             max-width: 800px;
             height: 90vh;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(30, 30, 46, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
         .chat-header {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: linear-gradient(135deg, #3730a3, #6d28d9);
             color: white;
             padding: 20px;
             text-align: center;
@@ -92,27 +93,27 @@
         }
 
         .message.agent {
-            background: #f8fafc;
-            color: #334155;
+            background: #2c2f3a;
+            color: #e2e8f0;
             align-self: flex-start;
             border-bottom-left-radius: 4px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #3a3f51;
             white-space: pre-wrap;
         }
 
         .message.system {
-            background: #fef3c7;
-            color: #92400e;
+            background: #3b3b1f;
+            color: #facc15;
             align-self: center;
             font-size: 12px;
             max-width: 90%;
             text-align: center;
-            border: 1px solid #fbbf24;
+            border: 1px solid #facc15;
         }
 
         .message.error {
-            background: #fee2e2;
-            color: #dc2626;
+            background: #4b1c1c;
+            color: #f87171;
             align-self: center;
             max-width: 90%;
             border: 1px solid #f87171;
@@ -121,8 +122,8 @@
         .typing-indicator {
             display: none;
             align-self: flex-start;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: #2c2f3a;
+            border: 1px solid #3a3f51;
             padding: 12px 18px;
             border-radius: 18px;
             border-bottom-left-radius: 4px;
@@ -138,7 +139,7 @@
         .typing-dots span {
             width: 6px;
             height: 6px;
-            background: #64748b;
+            background: #94a3b8;
             border-radius: 50%;
             animation: typing 1.4s infinite ease-in-out;
         }
@@ -149,13 +150,13 @@
         .typing-text {
             margin-left: 10px;
             font-size: 12px;
-            color: #64748b;
+            color: #94a3b8;
         }
 
         .chat-input-container {
             padding: 20px;
-            background: white;
-            border-top: 1px solid #e5e7eb;
+            background: #1f1f2b;
+            border-top: 1px solid #2e2e3e;
         }
 
         .chat-input-form {
@@ -167,7 +168,7 @@
         .chat-input {
             flex: 1;
             padding: 14px 18px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid #3a3f51;
             border-radius: 14px;
             font-size: 14px;
             resize: none;
@@ -175,14 +176,15 @@
             max-height: 120px;
             font-family: inherit;
             transition: all 0.3s ease;
-            background: #fafafa;
+            background: #2b2b3a;
+            color: #f1f5f9;
         }
 
         .chat-input:focus {
             outline: none;
-            border-color: #4f46e5;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: #7c3aed;
+            background: #1f1f2b;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
         }
 
         .send-button {
@@ -219,10 +221,11 @@
             top: 10px;
             left: 20px;
             font-size: 11px;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
             padding: 4px 8px;
             border-radius: 12px;
             opacity: 0.8;
+            color: #cbd5e1;
         }
 
         @keyframes fadeInUp {
@@ -265,7 +268,7 @@
                 border-radius: 0;
                 max-width: 100%;
             }
-            
+
             .message {
                 max-width: 85%;
             }
@@ -285,14 +288,14 @@
     <div class="chat-container">
         <div class="chat-header">
             <div class="connection-status" id="connectionStatus">🔒 Secure Connection</div>
-            <h1>Vertex AI Agent</h1>
+            <h1>Cortex AI Agent</h1>
             <div class="subtitle">Ready to assist you</div>
             <div class="status-indicator"></div>
         </div>
         
         <div class="chat-messages" id="chatMessages">
             <div class="message system">
-                👋 Welcome! I'm your Vertex AI Agent. How can I help you today?
+                👋 Welcome! I'm your Cortex Data Ingestion Document AI Agent. How can I help you today?
             </div>
         </div>
         
@@ -321,7 +324,7 @@
 
     <script>
         let messageCount = 0;
-
+        let sessionId = null; // Global variable to track session
         function addMessage(content, type = 'user', timestamp = true) {
             const chatMessages = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
@@ -393,29 +396,46 @@
             setButtonState(true);
             
             try {
+                // Build request body
+                const requestBody = {
+                    message: message
+                };
+
+                // Include sessionId only if it exists (i.e., not the first message)
+                if (sessionId) {
+                    requestBody.sessionId = sessionId;
+                }
+
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        message: message
-                    })
+                    body: JSON.stringify(requestBody)
                 });
-                
+
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.error || `Server error (${response.status})`);
                 }
-                
+
                 const data = await response.json();
-                
+
+                // Store sessionId from response if not already set
+                if (data.sessionId && !sessionId) {
+                    sessionId = data.sessionId;
+
+                    // Optional: persist session across page reloads
+                    // localStorage.setItem('chatSessionId', sessionId);
+                }
+
+                // Add AI response to chat
                 if (data.response) {
                     addMessage(data.response, 'agent');
                 } else {
                     throw new Error('No response received from agent');
                 }
-                
+
             } catch (error) {
                 console.error('Error:', error);
                 addMessage(`❌ ${error.message}`, 'error');

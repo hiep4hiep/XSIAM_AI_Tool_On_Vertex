@@ -35,8 +35,8 @@ if not LOCATION:
     raise ValueError(
         "GOOGLE_CLOUD_LOCATION environment variable not set. Please set it in your .env file."
     )
-CORPUS_DISPLAY_NAME = "SPL_to_XQL_Corpus"
-CORPUS_DESCRIPTION = "Corpus containing example of good SPL query to XQL query conversion."
+CORPUS_DISPLAY_NAME = "Data_Ingestion_Corpus"
+CORPUS_DESCRIPTION = "Corpus containing data ingestion document in XSIAM."
 PDF_URL = "https://abc.xyz/assets/77/51/9841ad5c4fbe85b4440c47a4df8d/goog-10-k-2024.pdf"
 PDF_FILENAME = "goog-10-k-2024.pdf"
 ENV_FILE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
@@ -94,7 +94,7 @@ def upload_pdf_to_corpus(corpus_name, pdf_path, display_name, description):
         corpus_name=corpus_name,
         path=pdf_path,
         display_name=display_name,
-        description=description,
+        description=description
     )
     print(f"Successfully uploaded {display_name} to corpus")
     return rag_file
@@ -123,9 +123,9 @@ def main():
   corpus = create_or_get_corpus()
 
     # Upload your local PDF to the corpus
-  local_file_path = "/home/hiepn/adk-samples/python/agents/RAG/rag/shared_libraries/Data_Model_Guide.pdf" # Set the correct path
-  display_name = "DM_Schema.pdf" # Set the desired display name
-  description = "Explain the Data Model schema to use in XQL Query" # Set the description
+  local_file_path = "/home/hiepn/adk-samples/python/agents/xsiam-ingestion-doc/ingestion_doc_tool/shared_libraries/xsiam_marketplace_ingestion_method.txt" # Set the correct path
+  display_name = "xsiam_marketplace_ingestion_method.txt" # Set the desired display name
+  description = "Explain Cortex XSIAM ingestion method from the Marketplace document" # Set the description
 
   # Ensure the file exists before uploading
   if os.path.exists(local_file_path):
