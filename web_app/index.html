@@ -326,7 +326,7 @@
         let messageCount = 0;
         let sessionId = null; // Global variable to track session
         function addMessage(text, sender, options = {}) {
-            const chatContainer = document.getElementById("chatMessages");
+            const chatContainer = document.getElementById("chat-container");
 
             // If we want to replace the last message instead of adding a new one
             if (options.replaceLast) {
