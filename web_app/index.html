@@ -356,8 +356,8 @@
             const systemMessage = document.createElement('div');
             systemMessage.className = 'message system';
             systemMessage.textContent = e.target.value === 'doc'
-                ? "👋 Switched to Data Source Ingestion Document Agent."
-                : "👋 Switched to SPL → XQL Agent.";
+                ? "👋 Switched to Data Source Ingestion Document Agent. Give me a Data source name, I'll generate a implementation document and you can ask follow up question."
+                : "👋 Switched to SPL → XQL Agent. Give me a Splunk SPL query, I'll convert to Cortex XSIAM XQL and you can ask follow up question";
             chatMessages.appendChild(systemMessage);
             chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
         });
