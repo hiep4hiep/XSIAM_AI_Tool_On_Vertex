@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vertex AI Agent Chat</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1e1e2f 0%, #12121c 100%);
@@ -20,7 +15,6 @@
             justify-content: center;
             align-items: center;
         }
-
         .chat-container {
             width: 100%;
             max-width: 800px;
@@ -28,12 +22,11 @@
             background: rgba(30, 30, 46, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
-
         .chat-header {
             background: linear-gradient(135deg, #3730a3, #6d28d9);
             color: white;
@@ -41,18 +34,8 @@
             text-align: center;
             position: relative;
         }
-
-        .chat-header h1 {
-            font-size: 24px;
-            font-weight: 600;
-        }
-
-        .chat-header .subtitle {
-            font-size: 14px;
-            opacity: 0.8;
-            margin-top: 5px;
-        }
-
+        .chat-header h1 { font-size: 24px; font-weight: 600; }
+        .chat-header .subtitle { font-size: 14px; opacity: 0.8; margin-top: 5px; }
         .status-indicator {
             position: absolute;
             right: 20px;
@@ -62,10 +45,9 @@
             height: 10px;
             border-radius: 50%;
             background: #10b981;
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 10px rgba(16,185,129,0.5);
             animation: pulse 2s infinite;
         }
-
         .chat-messages {
             flex: 1;
             padding: 20px;
@@ -74,7 +56,6 @@
             flex-direction: column;
             gap: 15px;
         }
-
         .message {
             max-width: 75%;
             padding: 12px 18px;
@@ -84,14 +65,12 @@
             animation: fadeInUp 0.3s ease;
             word-wrap: break-word;
         }
-
         .message.user {
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
             color: white;
             align-self: flex-end;
             border-bottom-right-radius: 4px;
         }
-
         .message.agent {
             background: #2c2f3a;
             color: #e2e8f0;
@@ -100,7 +79,6 @@
             border: 1px solid #3a3f51;
             white-space: pre-wrap;
         }
-
         .message.system {
             background: #3b3b1f;
             color: #facc15;
@@ -110,7 +88,6 @@
             text-align: center;
             border: 1px solid #facc15;
         }
-
         .message.error {
             background: #4b1c1c;
             color: #f87171;
@@ -118,7 +95,6 @@
             max-width: 90%;
             border: 1px solid #f87171;
         }
-
         .typing-indicator {
             display: none;
             align-self: flex-start;
@@ -129,13 +105,7 @@
             border-bottom-left-radius: 4px;
             max-width: 70%;
         }
-
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-
+        .typing-dots { display: flex; gap: 4px; align-items: center; }
         .typing-dots span {
             width: 6px;
             height: 6px;
@@ -143,28 +113,11 @@
             border-radius: 50%;
             animation: typing 1.4s infinite ease-in-out;
         }
-
         .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
         .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-
-        .typing-text {
-            margin-left: 10px;
-            font-size: 12px;
-            color: #94a3b8;
-        }
-
-        .chat-input-container {
-            padding: 20px;
-            background: #1f1f2b;
-            border-top: 1px solid #2e2e3e;
-        }
-
-        .chat-input-form {
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-        }
-
+        .typing-text { margin-left: 10px; font-size: 12px; color: #94a3b8; }
+        .chat-input-container { padding: 20px; background: #1f1f2b; border-top: 1px solid #2e2e3e; }
+        .chat-input-form { display: flex; gap: 12px; align-items: flex-end; }
         .chat-input {
             flex: 1;
             padding: 14px 18px;
@@ -179,14 +132,12 @@
             background: #2b2b3a;
             color: #f1f5f9;
         }
-
         .chat-input:focus {
             outline: none;
             border-color: #7c3aed;
             background: #1f1f2b;
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.3);
         }
-
         .send-button {
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
             color: white;
@@ -204,84 +155,23 @@
             justify-content: center;
             gap: 8px;
         }
-
-        .send-button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
-        }
-
-        .send-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
+        .send-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(79,70,229,0.3); }
+        .send-button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .connection-status {
             position: absolute;
             top: 10px;
             left: 20px;
             font-size: 11px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255,255,255,0.05);
             padding: 4px 8px;
             border-radius: 12px;
             opacity: 0.8;
             color: #cbd5e1;
         }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes typing {
-            0%, 60%, 100% {
-                transform: translateY(-6px);
-                opacity: 0.4;
-            }
-            30% {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-            }
-            50% {
-                box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
-            }
-            100% {
-                box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .chat-container {
-                height: 100vh;
-                border-radius: 0;
-                max-width: 100%;
-            }
-
-            .message {
-                max-width: 85%;
-            }
-
-            .chat-input-form {
-                gap: 8px;
-            }
-
-            .send-button {
-                min-width: 60px;
-                padding: 14px 16px;
-            }
-        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
+        @keyframes typing { 0%,60%,100% { transform: translateY(-6px); opacity: 0.4;} 30% { transform: translateY(0); opacity: 1;} }
+        @keyframes pulse { 0% { box-shadow:0 0 10px rgba(16,185,129,0.5);} 50% { box-shadow:0 0 20px rgba(16,185,129,0.8);} 100% { box-shadow:0 0 10px rgba(16,185,129,0.5);} }
+        @media (max-width: 768px) { .chat-container { height: 100vh; border-radius:0; max-width:100%; } .message { max-width:85%; } .chat-input-form { gap:8px; } .send-button { min-width:60px; padding:14px 16px; } }
     </style>
 </head>
 <body>
@@ -289,16 +179,21 @@
         <div class="chat-header">
             <div class="connection-status" id="connectionStatus">🔒 Secure Connection</div>
             <h1>Cortex AI Agent</h1>
-            <div class="subtitle">Ready to assist you</div>
+            <div class="subtitle">Choose an agent below</div>
             <div class="status-indicator"></div>
-        </div>
-        
-        <div class="chat-messages" id="chatMessages">
-            <div class="message system">
-                👋 Welcome! I'm your Cortex Data Ingestion Document AI Agent. How can I help you today?
+            <div style="margin-top:10px;">
+                <label for="agentSelector" style="font-size: 12px; margin-right: 8px;">Agent:</label>
+                <select id="agentSelector" style="padding:6px; border-radius:8px; border:none;">
+                    <option value="doc">📄 Data Source Ingestion Document</option>
+                    <option value="spl">🔍 SPL to XQL</option>
+                </select>
             </div>
         </div>
-        
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message system">👋 Welcome! Please select an agent to start chatting.</div>
+        </div>
+
         <div class="typing-indicator" id="typingIndicator">
             <div class="typing-dots">
                 <span></span>
@@ -307,13 +202,10 @@
             </div>
             <div class="typing-text">Agent is thinking...</div>
         </div>
-        
+
         <div class="chat-input-container">
             <form class="chat-input-form" onsubmit="sendMessage(event)">
-                <textarea class="chat-input" id="messageInput" 
-                         placeholder="Type your message here..." 
-                         onkeydown="handleKeyDown(event)"
-                         rows="1"></textarea>
+                <textarea class="chat-input" id="messageInput" placeholder="Type your message here..." onkeydown="handleKeyDown(event)" rows="1"></textarea>
                 <button type="submit" class="send-button" id="sendButton">
                     <span id="sendButtonText">Send</span>
                     <span id="sendButtonIcon">✨</span>
@@ -324,30 +216,16 @@
 
     <script>
         let messageCount = 0;
-        let sessionId = null; // Global variable to track session
-        function addMessage(content, type = 'user', timestamp = true) {
+        let sessionId = null;
+
+        function addMessage(content, type='user') {
             const chatMessages = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}`;
-            
-            if (type === 'agent' && content) {
-                // Format agent responses nicely
-                messageDiv.textContent = content;
-            } else {
-                messageDiv.textContent = content;
-            }
-            
+            messageDiv.textContent = content;
             chatMessages.appendChild(messageDiv);
-            
-            // Smooth scroll to bottom
-            chatMessages.scrollTo({
-                top: chatMessages.scrollHeight,
-                behavior: 'smooth'
-            });
-            
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
             messageCount++;
-            
-            // Update connection status
             if (type === 'agent' && messageCount > 1) {
                 document.getElementById('connectionStatus').textContent = '✅ Connected';
             }
@@ -355,11 +233,6 @@
 
         function showTyping() {
             document.getElementById('typingIndicator').style.display = 'flex';
-            const chatMessages = document.getElementById('chatMessages');
-            chatMessages.scrollTo({
-                top: chatMessages.scrollHeight,
-                behavior: 'smooth'
-            });
         }
 
         function hideTyping() {
@@ -371,7 +244,6 @@
             const sendButtonText = document.getElementById('sendButtonText');
             const sendButtonIcon = document.getElementById('sendButtonIcon');
             const messageInput = document.getElementById('messageInput');
-            
             sendButton.disabled = disabled;
             sendButtonText.textContent = disabled ? 'Sending' : 'Send';
             sendButtonIcon.textContent = disabled ? '⏳' : '✨';
@@ -380,37 +252,25 @@
 
         async function sendMessage(event) {
             event.preventDefault();
-            
             const messageInput = document.getElementById('messageInput');
             const message = messageInput.value.trim();
-            
             if (!message) return;
-            
-            // Add user message
             addMessage(message, 'user');
             messageInput.value = '';
             resetTextareaHeight();
-            
-            // Show typing indicator and disable input
             showTyping();
             setButtonState(true);
-            
+
             try {
-                // Build request body
-                const requestBody = {
-                    message: message
-                };
+                const requestBody = { message: message };
+                if (sessionId) requestBody.sessionId = sessionId;
 
-                // Include sessionId only if it exists (i.e., not the first message)
-                if (sessionId) {
-                    requestBody.sessionId = sessionId;
-                }
+                const agentType = document.getElementById('agentSelector').value;
+                const endpoint = agentType === 'doc' ? '/api/chat/doc' : '/api/chat/spl';
 
-                const response = await fetch('/api/chat', {
+                const response = await fetch(endpoint, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
                 });
 
@@ -420,16 +280,7 @@
                 }
 
                 const data = await response.json();
-
-                // Store sessionId from response if not already set
-                if (data.sessionId && !sessionId) {
-                    sessionId = data.sessionId;
-
-                    // Optional: persist session across page reloads
-                    // localStorage.setItem('chatSessionId', sessionId);
-                }
-
-                // Add AI response to chat
+                if (data.sessionId && !sessionId) sessionId = data.sessionId;
                 if (data.response) {
                     addMessage(data.response, 'agent');
                 } else {
@@ -460,22 +311,16 @@
             textarea.rows = 1;
         }
 
-        // Auto-resize textarea
         document.getElementById('messageInput').addEventListener('input', function() {
             this.style.height = 'auto';
             const newHeight = Math.min(this.scrollHeight, 120);
             this.style.height = newHeight + 'px';
-            
-            // Update rows for better UX
             const lineHeight = 20;
             this.rows = Math.max(1, Math.floor(newHeight / lineHeight));
         });
 
-        // Focus on input when page loads
         window.addEventListener('load', () => {
             document.getElementById('messageInput').focus();
-            
-            // Test connection on load
             fetch('/api/health')
                 .then(response => response.json())
                 .then(data => {
@@ -488,7 +333,6 @@
                 });
         });
 
-        // Handle connection status
         window.addEventListener('online', () => {
             document.getElementById('connectionStatus').textContent = '🔄 Reconnecting...';
             setTimeout(() => {
@@ -498,6 +342,17 @@
 
         window.addEventListener('offline', () => {
             document.getElementById('connectionStatus').textContent = '📡 Offline';
+        });
+
+        document.getElementById('agentSelector').addEventListener('change', (e) => {
+            const chatMessages = document.getElementById('chatMessages');
+            const systemMessage = document.createElement('div');
+            systemMessage.className = 'message system';
+            systemMessage.textContent = e.target.value === 'doc'
+                ? "👋 Switched to Data Source Ingestion Document Agent."
+                : "👋 Switched to SPL → XQL Agent.";
+            chatMessages.appendChild(systemMessage);
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
         });
     </script>
 </body>

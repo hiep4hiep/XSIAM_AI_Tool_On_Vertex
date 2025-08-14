@@ -39,19 +39,11 @@ vertexai.init(
     location=os.getenv("GOOGLE_CLOUD_LOCATION"),
 )
 session_service = VertexAiSessionService(project=os.getenv("GOOGLE_CLOUD_PROJECT"),location=os.getenv("GOOGLE_CLOUD_LOCATION"))
-AGENT_ENGINE_ID = os.getenv("AGENT_ENGINE_ID")
-agent_engine = agent_engines.get(AGENT_ENGINE_ID)
+#AGENT_ENGINE_ID = os.getenv("AGENT_ENGINE_ID")
+#agent_engine = agent_engines.get(AGENT_ENGINE_ID)
 
-
-# Routes
-@app.route('/')
-def index():
-    """Serve the main HTML page"""
-    return send_from_directory('.', 'index.html')
-
-@app.route('/api/chat', methods=['POST'])
-def chat():
-    """Main chat endpoint"""
+def chat_to_engine(engine_id):
+    agent_engine = agent_engines.get(engine_id)
     try:
         # Get request data
         data = request.get_json()
@@ -99,6 +91,20 @@ def chat():
             "timestamp": datetime.now().isoformat()
         }), 500
 
+# Routes
+@app.route('/')
+def index():
+    """Serve the main HTML page"""
+    return send_from_directory('.', 'index.html')
+
+@app.route('/api/chat/doc', methods=['POST'])
+def chat_doc():
+    chat_to_engine(os.getenv("DOC_AGENT_ENGINE_ID"))
+
+
+@app.route('/api/chat/spl', methods=['POST'])
+def chat_spl():
+    chat_to_engine(os.getenv("SPL_AGENT_ENGINE_ID"))
 
 # Error handlers
 @app.errorhandler(404)
