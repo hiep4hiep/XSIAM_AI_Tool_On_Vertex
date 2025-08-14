@@ -64,9 +64,9 @@ def chat():
         
         session_id = data.get('session_id')
         if not session_id:
-            session = asyncio.run(agent_engine.create_session(
+            session = agent_engine.create_session(
                 user_id="web_app"
-            ))
+            )
             session_id = session.get('id')
         logger.info(f"Received chat message: {message[:100]}...")
         
