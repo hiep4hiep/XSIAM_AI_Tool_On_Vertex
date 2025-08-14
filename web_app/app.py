@@ -62,7 +62,7 @@ def chat_to_engine(engine_id):
             session = agent_engine.create_session(user_id="web_app")
             session_id = session.get('id')
 
-        logger.info(f"Received chat message: {message[:100]}...")
+        logger.info(f"Session {session_id} - Received chat message: {message[:100]}...")
 
         result = None
         for response in agent_engine.stream_query(
@@ -136,7 +136,6 @@ def internal_error(error):
 if __name__ == '__main__':
     logger.info("=" * 50)
     logger.info("🚀 Starting Vertex AI Chat Server")
-    logger.info(f"🤖 Reasoning Engine ID: {AGENT_ENGINE_ID}")
     logger.info(f"🌐 Server will run on: http://0.0.0.0:8000")
     logger.info("=" * 50)
     
