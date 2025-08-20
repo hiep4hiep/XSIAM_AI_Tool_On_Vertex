@@ -20,6 +20,11 @@ from google.oauth2 import service_account
 from google.auth import default
 import vertexai
 
+import csv
+import tempfile
+import asyncio
+from werkzeug.utils import secure_filename
+
 
 
 # Configure logging
@@ -118,6 +123,85 @@ def chat(engine_key):
         return jsonify({"error": f"Unknown engine '{engine_key}'"}), 404
 
     return chat_to_engine(engine_id)
+
+
+@app.route('/api/batch_chat/<engine_key>', methods=['POST'])
+def batch_chat(engine_key):
+    engine_env_map = {
+        "doc": os.getenv("DOC_AGENT_ENGINE_ID"),
+        "spl": os.getenv("SPL_AGENT_ENGINE_ID")
+    }
+    engine_id = engine_env_map.get(engine_key)
+    logger.info(engine_id)
+    if not engine_id:
+        return jsonify({"error": f"Unknown engine"}), 404
+    agent_engine = agent_engines.get(engine_id)
+    """Batch chat endpoint: upload CSV -> process each line concurrently -> return CSV"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "Empty filename"}), 400
+        
+        filename = secure_filename(file.filename)
+
+        # Read uploaded CSV (assume first column = prompt)
+        messages = []
+        reader = csv.reader(file.stream.read().decode("utf-8").splitlines())
+        for row in reader:
+            if row:
+                messages.append(row[0].strip())
+
+        # Async processing
+        async def process_message(msg, semaphore):
+            async with semaphore:
+                try:
+                    session = agent_engine.create_session(user_id="batch_job")
+                    session_id = session.get("id")
+
+                    result_text = ""
+                    for response in agent_engine.stream_query(
+                        message=msg,
+                        user_id="batch_job",
+                        session_id=session_id
+                    ):
+                        result = response
+                    result_text = result.get("content").get("parts")[0].get("text", "")
+                    return {"input": msg, "output": result_text}
+                except Exception as e:
+                    return {"input": msg, "output": f"ERROR: {str(e)}"}
+
+        async def run_batch():
+            semaphore = asyncio.Semaphore(5)  # limit concurrency to 5
+            tasks = [process_message(m, semaphore) for m in messages]
+            return await asyncio.gather(*tasks)
+
+        results = asyncio.run(run_batch())
+
+        # Write results to a temporary CSV
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+        with open(temp_file.name, "w", newline='', encoding="utf-8") as out_csv:
+            writer = csv.writer(out_csv)
+            writer.writerow(["Input", "Output"])
+            for r in results:
+                writer.writerow([r["input"], r["output"]])
+
+        return send_from_directory(
+            directory=os.path.dirname(temp_file.name),
+            path=os.path.basename(temp_file.name),
+            as_attachment=True,
+            download_name=f"batch_results_{filename}"
+        )
+
+    except Exception as e:
+        logger.error(f"Error in batch_chat endpoint: {e}")
+        return jsonify({
+            "error": f"Internal server error: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
 
 # Error handlers
 @app.errorhandler(404)

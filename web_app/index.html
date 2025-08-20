@@ -432,6 +432,11 @@
                         <span id="sendButtonText">Send</span>
                         <span id="sendButtonIcon">✨</span>
                     </button>
+                    <!-- New: file upload for batch -->
+                    <input type="file" id="batchFileInput" accept=".csv" style="display:none" onchange="uploadBatchFile(event)">
+                    <button type="button" class="send-button" onclick="document.getElementById('batchFileInput').click()">
+                        📁 Upload CSV
+                    </button>
                 </form>
             </div>
         </div>
@@ -585,6 +590,39 @@
             chatMessages.appendChild(systemMessage);
             chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
         });
+        
+        // === New: Batch Upload Handler ===
+        async function uploadBatchFile(event) {
+            const agentType = document.getElementById('agentSelector').value;
+            const endpoint = agentType === 'doc' ? '/api/batch_chat/doc' : '/api/batch_chat/spl';
+            const file = event.target.files[0];
+            if (!file) return;
+            addMessage(`📂 Selected file: ${file.name}`, 'system');
+            addMessage(`⏳ Processing batch file... this may take several minutes.`, 'system');
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const response = await fetch(endpoint, { method: 'POST', body: formData });
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Server error (${response.status})`);
+                }
+                const blob = await response.blob();
+                const downloadUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `batch_results_${file.name}`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                addMessage(`✅ Batch completed! Results downloaded as batch_results_${file.name}`, 'system');
+            } catch (error) {
+                console.error('Batch error:', error);
+                addMessage(`❌ Batch failed: ${error.message}`, 'error');
+            } finally {
+                event.target.value = ''; // reset input
+            }
+        }
     </script>
 </body>
 </html>
