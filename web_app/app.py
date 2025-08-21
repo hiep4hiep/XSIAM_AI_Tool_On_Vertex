@@ -20,7 +20,7 @@ from google.oauth2 import service_account
 from google.auth import default
 import vertexai
 import uuid, threading
-import csv
+import csv, json
 import tempfile
 import asyncio
 import concurrent.futures
@@ -30,7 +30,8 @@ from werkzeug.utils import secure_filename
 
 RESULTS_DIR = os.path.join(os.getcwd(), "results")
 MAX_CONCURRENCY = 5  # tune based on server and Vertex AI quota
-jobs = {}
+JOB_DIR = os.path.join(os.getcwd(), "job_status")
+os.makedirs(JOB_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 # Configure logging
 logging.basicConfig(
@@ -51,6 +52,19 @@ vertexai.init(
 #session_service = VertexAiSessionService(project=os.getenv("GOOGLE_CLOUD_PROJECT"),location=os.getenv("GOOGLE_CLOUD_LOCATION"))
 #AGENT_ENGINE_ID = os.getenv("AGENT_ENGINE_ID")
 #agent_engine = agent_engines.get(AGENT_ENGINE_ID)
+def save_job_status(job_id, status):
+    path = os.path.join(JOB_DIR, f"{job_id}.json")
+    with open(path, "w") as f:
+        json.dump(status, f)
+
+
+def load_job_status(job_id):
+    path = os.path.join(JOB_DIR, f"{job_id}.json")
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        return json.load(f)
+    
 
 def chat_to_engine(engine_id):
     agent_engine = agent_engines.get(engine_id)
@@ -128,8 +142,7 @@ def process_and_save(file_path, job_id, output_filename, engine_id):
     """Background worker: process CSV and save results locally"""
     #agent_engine = agent_engines.get(engine_id)
     try:
-        jobs[job_id] = {}
-        jobs[job_id]["status"] = "running"
+        save_job_status(job_id, {"status": "running", "result_url": None, "error": None})
         results = []
         # Load all messages
         with open(file_path, newline='', encoding="utf-8") as infile:
@@ -155,13 +168,10 @@ def process_and_save(file_path, job_id, output_filename, engine_id):
             for r in results:
                 writer.writerow(r)
 
-        jobs[job_id]["status"] = "completed"
-        jobs[job_id]["result_url"] = f"/results/{output_filename}"
+        save_job_status(job_id, {"status": "completed", "result_url": f"/results/{output_filename}", "error": None})
 
     except Exception as e:
-        jobs[job_id] = {}
-        jobs[job_id]["status"] = "failed"
-        jobs[job_id]["error"] = str(e)
+        save_job_status(job_id, {"status": "failed", "result_url": None, "error": str(e)})
 
 
 # Routes
@@ -285,7 +295,12 @@ def batch_chat(engine_key):
             args=(tmp_in.name, job_id, output_filename, engine_id),
             daemon=True
         ).start()
-
+        job_status = {
+            "status": "pending",
+            "result_url": None,
+            "error": None
+        }
+        save_job_status(job_id, job_status)
         return jsonify({
             "job_id": job_id,
             "status_url": f"/api/batch_status/{job_id}"
@@ -298,7 +313,7 @@ def batch_chat(engine_key):
     
 @app.route('/api/batch_status/<job_id>', methods=['GET'])
 def batch_status(job_id):
-    job = jobs.get(job_id)
+    job = load_job_status(job_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
     return jsonify(job)

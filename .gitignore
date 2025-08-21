@@ -1,3 +1,4 @@
 .env
 gkey.json
 results/*
+job_status/*
