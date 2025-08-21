@@ -19,14 +19,19 @@ from google.cloud import aiplatform
 from google.oauth2 import service_account
 from google.auth import default
 import vertexai
-
+import uuid, threading
 import csv
 import tempfile
 import asyncio
+import concurrent.futures
+
 from werkzeug.utils import secure_filename
 
 
-
+RESULTS_DIR = os.path.join(os.getcwd(), "results")
+MAX_CONCURRENCY = 5  # tune based on server and Vertex AI quota
+jobs = {}
+os.makedirs(RESULTS_DIR, exist_ok=True)
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -105,6 +110,60 @@ def chat_to_engine(engine_id):
             "timestamp": datetime.now().isoformat()
         }), 500
 
+def query_agent(msg,engine_id):
+    agent_engine = agent_engines.get(engine_id)
+    session = agent_engine.create_session(user_id="batch_job")
+    session_id = session.get("id")
+    result_text = ""
+    for response in agent_engine.stream_query(
+        message=msg,
+        user_id="batch_job",
+        session_id=session_id
+    ):
+        result = response
+    return result.get("content").get("parts")[0].get("text", "")
+
+
+def process_and_save(file_path, job_id, output_filename, engine_id):
+    """Background worker: process CSV and save results locally"""
+    #agent_engine = agent_engines.get(engine_id)
+    try:
+        jobs[job_id] = {}
+        jobs[job_id]["status"] = "running"
+        results = []
+        # Load all messages
+        with open(file_path, newline='', encoding="utf-8") as infile:
+            reader = [row[0].strip() for row in csv.reader(infile) if row]
+
+        # Run queries in parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENCY) as executor:
+            futures = {executor.submit(query_agent, msg, engine_id): msg for msg in reader}
+            for future in concurrent.futures.as_completed(futures):
+                msg = futures[future]
+                try:
+                    result_text = future.result()
+                except Exception as e:
+                    result_text = f"ERROR: {str(e)}"
+                results.append([msg, result_text])
+
+
+        # Save results file
+        output_path = os.path.join(RESULTS_DIR, output_filename)
+        with open(output_path, "w", newline='', encoding="utf-8") as out_csv:
+            writer = csv.writer(out_csv)
+            writer.writerow(["Input", "Output"])
+            for r in results:
+                writer.writerow(r)
+
+        jobs[job_id]["status"] = "completed"
+        jobs[job_id]["result_url"] = f"/results/{output_filename}"
+
+    except Exception as e:
+        jobs[job_id] = {}
+        jobs[job_id]["status"] = "failed"
+        jobs[job_id]["error"] = str(e)
+
+
 # Routes
 @app.route('/')
 def index():
@@ -135,8 +194,9 @@ def batch_chat(engine_key):
     logger.info(engine_id)
     if not engine_id:
         return jsonify({"error": f"Unknown engine"}), 404
-    agent_engine = agent_engines.get(engine_id)
+    #agent_engine = agent_engines.get(engine_id)
     """Batch chat endpoint: upload CSV -> process each line concurrently -> return CSV"""
+    """ Return result directly to user
     try:
         if 'file' not in request.files:
             return jsonify({"error": "No file uploaded"}), 400
@@ -201,7 +261,53 @@ def batch_chat(engine_key):
             "error": f"Internal server error: {str(e)}",
             "timestamp": datetime.now().isoformat()
         }), 500
+    """
+    """ New version: Save results to a file and return URL """
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "Empty filename"}), 400
 
+        # Save upload temporarily
+        tmp_in = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+        file.save(tmp_in.name)
+
+        # Define output filename + public URL
+        job_id = str(uuid.uuid4())
+        output_filename = f"{job_id}.csv"
+        output_url = f"/results/{output_filename}"
+
+        # Start background job
+        threading.Thread(
+            target=process_and_save,
+            args=(tmp_in.name, job_id, output_filename, engine_id),
+            daemon=True
+        ).start()
+
+        return jsonify({
+            "job_id": job_id,
+            "status_url": f"/api/batch_status/{job_id}"
+        })
+
+    except Exception as e:
+        logger.error(f"Error in batch_chat: {e}")
+        return jsonify({"error": str(e)}), 500
+    
+    
+@app.route('/api/batch_status/<job_id>', methods=['GET'])
+def batch_status(job_id):
+    job = jobs.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    return jsonify(job)
+
+
+# Serve result files
+@app.route('/results/<path:filename>')
+def download_result(filename):
+    return send_from_directory(RESULTS_DIR, filename, as_attachment=True)
 
 # Error handlers
 @app.errorhandler(404)

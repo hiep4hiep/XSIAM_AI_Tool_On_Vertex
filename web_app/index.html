@@ -297,6 +297,12 @@
             outline: none;
             background: rgba(255,255,255,0.15);
         }
+
+        .download-link {
+            color: limegreen;
+            font-weight: bold;
+            text-decoration: underline;
+        }
         
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
         @keyframes typing { 0%,60%,100% { transform: translateY(-6px); opacity: 0.4;} 30% { transform: translateY(0); opacity: 1;} }
@@ -597,25 +603,57 @@
             const endpoint = agentType === 'doc' ? '/api/batch_chat/doc' : '/api/batch_chat/spl';
             const file = event.target.files[0];
             if (!file) return;
+
             addMessage(`📂 Selected file: ${file.name}`, 'system');
-            addMessage(`⏳ Processing batch file... this may take several minutes.`, 'system');
+            addMessage(`⏳ Uploading batch file...`, 'system');
+
             const formData = new FormData();
             formData.append('file', file);
+
             try {
-                const response = await fetch(endpoint, { method: 'POST', body: formData });
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.error || `Server error (${response.status})`);
                 }
-                const blob = await response.blob();
-                const downloadUrl = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = downloadUrl;
-                a.download = `batch_results_${file.name}`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                addMessage(`✅ Batch completed! Results downloaded as batch_results_${file.name}`, 'system');
+
+                const data = await response.json();
+                const statusUrl = data.status_url;
+
+                addMessage(`✅ Batch job started! Tracking status...`, 'system');
+
+                // Poll job status
+                const interval = setInterval(async () => {
+                    const res = await fetch(statusUrl);
+                    if (!res.ok) return;
+                    const statusData = await res.json();
+
+                    if (statusData.status === "completed") {
+                        clearInterval(interval);
+                        const link = document.createElement('a');
+                        link.href = statusData.result_url;
+                        link.textContent = "🔗 Download Result File";
+                        link.target = "_blank";
+                        link.className = "download-link";
+
+                        addMessage(`🎉 Batch completed!`, 'system');
+                        const chatMessages = document.getElementById('chatMessages');
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = "message system";
+                        messageDiv.appendChild(link);
+                        chatMessages.appendChild(messageDiv);
+                        chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+                    }
+                    else if (statusData.status === "failed") {
+                        clearInterval(interval);
+                        addMessage(`❌ Batch failed: ${statusData.error}`, 'error');
+                    }
+                }, 5000); // check every 5s
+
             } catch (error) {
                 console.error('Batch error:', error);
                 addMessage(`❌ Batch failed: ${error.message}`, 'error');
