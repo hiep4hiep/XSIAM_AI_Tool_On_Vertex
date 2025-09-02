@@ -175,17 +175,16 @@ def process_and_save(file_path, job_id, output_filename, engine_id):
 
 
 # Routes
-@app.route('/')
-def index():
-    """Serve the main HTML page"""
-    return send_from_directory('.', 'index.html')
+#@app.route('/')
+#def index():
+#    """Serve the main HTML page"""
+#    return send_from_directory('.', 'index.html')
 
 @app.route('/api/chat/<engine_key>', methods=['POST'])
 def chat(engine_key):
     # Map engine_key to environment variable or direct engine_id
     engine_env_map = {
-        "doc": os.getenv("DOC_AGENT_ENGINE_ID"),
-        "spl": os.getenv("SPL_AGENT_ENGINE_ID")
+        "dmgen": os.getenv("DM_AGENT_ENGINE_ID"),
     }
     engine_id = engine_env_map.get(engine_key)
     if not engine_id:
@@ -197,8 +196,7 @@ def chat(engine_key):
 @app.route('/api/batch_chat/<engine_key>', methods=['POST'])
 def batch_chat(engine_key):
     engine_env_map = {
-        "doc": os.getenv("DOC_AGENT_ENGINE_ID"),
-        "spl": os.getenv("SPL_AGENT_ENGINE_ID")
+        "dmgen": os.getenv("DM_AGENT_ENGINE_ID")
     }
     engine_id = engine_env_map.get(engine_key)
     logger.info(engine_id)
@@ -287,7 +285,7 @@ def batch_chat(engine_key):
         # Define output filename + public URL
         job_id = str(uuid.uuid4())
         output_filename = f"{job_id}.csv"
-        output_url = f"/results/{output_filename}"
+        output_url = f"/results/{engine_id}/{output_filename}"
 
         # Start background job
         threading.Thread(
@@ -303,7 +301,7 @@ def batch_chat(engine_key):
         save_job_status(job_id, job_status)
         return jsonify({
             "job_id": job_id,
-            "status_url": f"/api/batch_status/{job_id}"
+            "status_url": f"/api/batch_status/{engine_id}/{job_id}"
         })
 
     except Exception as e:
@@ -311,7 +309,7 @@ def batch_chat(engine_key):
         return jsonify({"error": str(e)}), 500
     
     
-@app.route('/api/batch_status/<job_id>', methods=['GET'])
+@app.route('/api/batch_status/<engine_key>/<job_id>', methods=['GET'])
 def batch_status(job_id):
     job = load_job_status(job_id)
     if not job:
@@ -320,7 +318,7 @@ def batch_status(job_id):
 
 
 # Serve result files
-@app.route('/results/<path:filename>')
+@app.route('/results/<engine_key>/<path:filename>')
 def download_result(filename):
     return send_from_directory(RESULTS_DIR, filename, as_attachment=True)
 
