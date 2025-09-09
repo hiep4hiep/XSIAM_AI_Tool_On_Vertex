@@ -1,7 +1,7 @@
 # XSIAM AI Tools on Google Vertex
 
 ## Application deployment
-![alt text](image.png)
+![alt text](diagram.png)
 
 ## AI Agents
 
