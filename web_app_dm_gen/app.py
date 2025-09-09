@@ -174,11 +174,6 @@ def process_and_save(file_path, job_id, output_filename, engine_id):
         save_job_status(job_id, {"status": "failed", "result_url": None, "error": str(e)})
 
 
-# Routes
-#@app.route('/')
-#def index():
-#    """Serve the main HTML page"""
-#    return send_from_directory('.', 'index.html')
 
 @app.route('/api/chat/<engine_key>', methods=['POST'])
 def chat(engine_key):

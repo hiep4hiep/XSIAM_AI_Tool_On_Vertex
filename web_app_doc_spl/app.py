@@ -13,7 +13,7 @@ from vertexai.preview import reasoning_engines
 from google.adk.sessions import VertexAiSessionService
 from dotenv import load_dotenv
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 from google.cloud import aiplatform
 from google.oauth2 import service_account
@@ -178,7 +178,7 @@ def process_and_save(file_path, job_id, output_filename, engine_id):
 @app.route('/')
 def index():
     """Serve the main HTML page"""
-    return send_from_directory('.', 'index.html')
+    return render_template("index.html")
 
 @app.route('/api/chat/<engine_key>', methods=['POST'])
 def chat(engine_key):

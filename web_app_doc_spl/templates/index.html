@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertex AI Agent Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="main-container">
+        <!-- Instructions Panel -->
+        <div class="instructions-panel">
+            <div class="instructions-header">
+                <h2>📋 Tool Instructions</h2>
+                <div class="subtitle">Usage guidelines for each agent</div>
+            </div>
+            
+            <div class="instructions-content">
+                <div class="tool-section" id="docInstructions">
+                    <div class="tool-title">
+                        📄 Data Source Integration Document
+                    </div>
+                    <div class="tool-usage">
+                        <strong>Usage:</strong> Enter a data source name into the chat box.
+                        <ul>
+                            <li>The system will generate an implementation document for change requests</li>
+                            <li>Output is in Markdown format</li>
+                            <li>Copy and paste Markdown to Google Docs for nice formatting</li>
+                            <li>Export the formatted document to share with customers</li>
+                            <li>Bulk option: create a CSV with 1 column, no header and use Upload CSV button</li>
+                        </ul>
+                        <strong>Example:</strong> "Microsoft Office 365" or "AWS CloudTrail"
+                    </div>
+                </div>
+                
+                <div class="tool-section" id="splInstructions">
+                    <div class="tool-title">
+                        🔍 SPL to XQL Converter
+                    </div>
+                    <div class="tool-usage">
+                        <strong>Usage:</strong> Provide a Splunk SPL query to convert.
+                        <ul>
+                            <li>Converts Splunk Search Processing Language (SPL) queries</li>
+                            <li>Outputs equivalent Cortex XSIAM XQL queries</li>
+                            <li>Ask follow-up questions for clarification or modifications</li>
+                            <li>Bulk option: create a CSV with 1 column, no header and use Upload CSV button</li>
+                        </ul>
+                        <strong>Example:</strong> "index=main sourcetype=access_combined | stats count by host"
+                    </div>
+                </div>
+                <div class="tool-section" id="dmgenInstructions">
+                    <div class="tool-title">
+                        🛡️ Data Model Rule Generator
+                    </div>
+                    <div class="tool-usage">
+                        <strong>Usage:</strong> Paste one or more lines of raw log data into the chat box.
+                        <ul>
+                            <li>Automatically generates Cortex XSIAM Data Model rules from raw logs</li>
+                            <li>Supports single or multiple log lines for batch rule creation</li>
+                            <li>Output is in Markdown format for easy review and editing</li>
+                            <li>Bulk option: create a CSV with 1 column, no header and use Upload CSV button</li>
+                        </ul>
+                        <strong>Example:</strong> 
+                        <ul>
+                            <li>{"event_type":"login","user":"alice","status":"success"}</li>
+                            <li>Jul 10 12:34:56 host sshd[12345]: Accepted password for bob from 192.168.1.2 port 54321</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="connection-status" id="connectionStatus">🔒 Secure Connection</div>
+                <h1>Cortex AI Agent</h1>
+                <div class="subtitle">AI-powered tools for security operations</div>
+                <div class="status-indicator"></div>
+                
+                <div class="agent-selector-container">
+                    <label for="agentSelector">Agent:</label>
+                    <select id="agentSelector">
+                        <option value="doc">📄 Data Source Integration Document</option>
+                        <option value="spl">🔍 SPL to XQL Converter</option>
+                        <option value="dmgen">🛡️ Data Model Rule Generator</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message system">👋 Welcome! Select an agent and follow the instructions in the left panel to get started.</div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="typing-text">Agent is thinking... It can take a few minutes</div>
+            </div>
+
+            <div class="chat-input-container">
+                <form class="chat-input-form" onsubmit="sendMessage(event)">
+                    <textarea class="chat-input" id="messageInput" placeholder="Type your message here..." onkeydown="handleKeyDown(event)" rows="1"></textarea>
+                    <button type="submit" class="send-button" id="sendButton">
+                        <span id="sendButtonText">Send</span>
+                        <span id="sendButtonIcon">✨</span>
+                    </button>
+                    <!-- New: file upload for batch -->
+                    <input type="file" id="batchFileInput" accept=".csv" style="display:none" onchange="uploadBatchFile(event)">
+                    <button type="button" class="send-button" onclick="document.getElementById('batchFileInput').click()">
+                        📁 Upload CSV
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
